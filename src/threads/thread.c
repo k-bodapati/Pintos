@@ -583,6 +583,15 @@ thread_schedule_tail (struct thread *prev)
 
    It's not safe to call printf() until thread_schedule_tail()
    has completed. */
+thread_action_func wakeup;
+void wakeup (struct thread *t, void *aux UNUSED) {
+ // check for wakeup time, if it is current time, then wake up it
+ int64_t current_time = timer_ticks();
+ if (current_time >= t->wakeup_time) {
+   thread_unblock(t);
+ }
+}
+
 static void
 schedule (void)
 {
@@ -597,6 +606,9 @@ schedule (void)
   if (cur != next)
     prev = switch_threads (cur, next);
   thread_schedule_tail (prev);
+
+  thread_foreach(wakeup, NULL);
+
 }
 
 /* Returns a tid to use for a new thread. */
