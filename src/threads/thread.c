@@ -15,9 +15,7 @@
 #include "userprog/process.h"
 #endif
 
-// Sorting Function for lists
 list_less_func priority_compare;
-
 bool priority_compare (const struct list_elem *a,
                              const struct list_elem *b,
                              void *aux UNUSED)
@@ -26,6 +24,41 @@ bool priority_compare (const struct list_elem *a,
   struct thread *tb = list_entry (b, struct thread, elem);
   return (ta->priority > tb->priority);
 }
+
+// list_less_func block_compare;
+// bool block_compare (const struct list_elem *a,
+//                              const struct list_elem *b,
+//                              void *aux UNUSED)
+// {
+//   struct thread *ta = list_entry (a, struct thread, elem);
+//   struct thread *tb = list_entry (b, struct thread, elem);
+//   if (ta->wakeup_time < tb->wakeup_time) {
+//     if (ta->wakeup_time == -1) {
+//       return false;
+//     }
+//     return true;
+//   }
+//   else {
+//     if (tb->wakeup_time == -1) {
+//       return true;
+//     }
+//     return false;
+//   }
+// }
+
+thread_action_func wakeup;
+void wakeup (struct thread *t, void *aux UNUSED) {
+  if (t->status == THREAD_BLOCKED && t->wakeup_time>0) {
+    int64_t current_time = timer_ticks();
+    if (t->wakeup_time == current_time) {
+      t->wakeup_time = -1; // setting default value
+      thread_unblock(t);
+    }
+  }
+}
+
+
+
 
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
@@ -146,6 +179,8 @@ thread_tick (void)
   else
     kernel_ticks++;
 
+  thread_foreach(wakeup, NULL);
+
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
@@ -194,6 +229,7 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+  t->wakeup_time = -1; // default wakeup time is -1, to know this thread is never blocked
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -237,6 +273,8 @@ thread_block (void)
 {
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
+  // Need to Sort all_list
+  // list_sort(&all_list, block_compare, NULL);
 
   thread_current ()->status = THREAD_BLOCKED;
   schedule ();
@@ -583,14 +621,7 @@ thread_schedule_tail (struct thread *prev)
 
    It's not safe to call printf() until thread_schedule_tail()
    has completed. */
-thread_action_func wakeup;
-void wakeup (struct thread *t, void *aux UNUSED) {
- // check for wakeup time, if it is current time, then wake up it
- int64_t current_time = timer_ticks();
- if (current_time >= t->wakeup_time) {
-   thread_unblock(t);
- }
-}
+
 
 static void
 schedule (void)
@@ -606,9 +637,6 @@ schedule (void)
   if (cur != next)
     prev = switch_threads (cur, next);
   thread_schedule_tail (prev);
-
-  thread_foreach(wakeup, NULL);
-
 }
 
 /* Returns a tid to use for a new thread. */
