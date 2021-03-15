@@ -11,9 +11,12 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include <fixedpoint.h>
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
+
+static fixed_point_t load_avg;
 
 list_less_func priority_compare;
 bool priority_compare (const struct list_elem *a,
@@ -24,7 +27,7 @@ bool priority_compare (const struct list_elem *a,
   struct thread *tb = list_entry (b, struct thread, elem);
   return (ta->priority > tb->priority);
 }
-
+/*
 // list_less_func block_compare;
 // bool block_compare (const struct list_elem *a,
 //                              const struct list_elem *b,
@@ -45,6 +48,7 @@ bool priority_compare (const struct list_elem *a,
 //     return false;
 //   }
 // }
+*/
 
 thread_action_func wakeup;
 void wakeup (struct thread *t, void *aux UNUSED) {
@@ -56,6 +60,11 @@ void wakeup (struct thread *t, void *aux UNUSED) {
     }
   }
 }
+
+// thread_action_func update_recent_cpu;
+// void update_recent_cpu(struct thread *t, void *aux UNUSED) {
+//   t->recent_cpu = a * t->recent_cpu + nice;
+// }
 
 
 
@@ -129,6 +138,7 @@ static tid_t allocate_tid (void);
 
    It is not safe to call thread_current() until this function
    finishes. */
+
 void
 thread_init (void)
 {
@@ -167,6 +177,13 @@ thread_start (void)
 void
 thread_tick (void)
 {
+  if (timer_ticks()%100 == 0) {
+    printf ("Load Average : --- %d, From thread\n", load_avg.f);
+    fixed_point_t val_59_60 = fix_frac(59,60);
+    fixed_point_t val_1_60 = fix_frac(1,60);
+    load_avg = fix_add (fix_mul(val_59_60, load_avg), fix_scale(val_1_60, list_size(&ready_list)));
+  }
+
   struct thread *t = thread_current ();
 
   /* Update statistics. */
@@ -250,12 +267,14 @@ thread_create (const char *name, int priority,
   thread_unblock (t);
 
   // Front item in the list
-  struct list_elem *front_elem= list_front(&ready_list);
-  struct thread *front_thread = list_entry (front_elem, struct thread, elem);
+  if (list_size(&ready_list) > 0) {
+    struct list_elem *front_elem = list_front(&ready_list);
+    struct thread *front_thread = list_entry (front_elem, struct thread, elem);
 
-  // Got for higher priority thread
-  if (front_thread->priority > thread_get_priority()) {
-    thread_yield();
+    // Got for higher priority thread
+    if (front_thread->priority > thread_get_priority()) {
+      thread_yield();
+    }
   }
 
 
@@ -434,7 +453,8 @@ int
 thread_get_load_avg (void)
 {
   /* Not yet implemented. */
-  return 0;
+  // return 0;
+  return fix_round(load_avg)*100;
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
@@ -442,6 +462,7 @@ int
 thread_get_recent_cpu (void)
 {
   /* Not yet implemented. */
+
   return 0;
 }
 

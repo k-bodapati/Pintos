@@ -7,7 +7,7 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
-
+#include <fixedpoint.h>
 /* See [8254] for hardware details of the 8254 timer chip. */
 
 #if TIMER_FREQ < 19
@@ -19,6 +19,9 @@
 
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
+
+/* Load average since OS booted start value will be */
+// static fixed_point_t load_avg;
 
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
@@ -75,6 +78,15 @@ timer_ticks (void)
   intr_set_level (old_level);
   return t;
 }
+
+// fixed_point_t
+// current_loadavg (void)
+// {
+//   enum intr_level old_level = intr_disable ();
+//   fixed_point_t l_a = load_avg;
+//   intr_set_level (old_level);
+//   return l_a;
+// }
 
 /* Returns the number of timer ticks elapsed since THEN, which
    should be a value once returned by timer_ticks(). */

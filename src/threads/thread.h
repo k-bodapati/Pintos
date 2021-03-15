@@ -88,7 +88,9 @@ struct thread
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
-    int64_t wakeup_time;            /* Time when a thread should be woken, default = -1 */
+    int64_t wakeup_time;                /* Time when a thread should be woken, default = -1 */
+    // int64_t recent_cpu = 0;
+    // int nice;
     struct list_elem allelem;           /* List element for all threads list. */
 
     /* Shared between thread.c and synch.c. */
