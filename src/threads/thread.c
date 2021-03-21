@@ -16,7 +16,7 @@
 #include "userprog/process.h"
 #endif
 
-static fixed_point_t load_avg;
+static fixed_point_t load_avg, val_59_60;
 
 list_less_func priority_compare;
 bool priority_compare (const struct list_elem *a,
@@ -153,6 +153,8 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+
+  val_59_60 = fix_frac(59,60);
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -178,23 +180,31 @@ void
 thread_tick (void)
 {
   if (timer_ticks()%100 == 0) {
-    printf ("Load Average : --- %d, From thread\n", load_avg.f);
-    fixed_point_t val_59_60 = fix_frac(59,60);
-    fixed_point_t val_1_60 = fix_frac(1,60);
-    load_avg = fix_add (fix_mul(val_59_60, load_avg), fix_scale(val_1_60, list_size(&ready_list)));
-  }
+    int count;
+
+
+    if (thread_current() != idle_thread) {
+      count = list_size(&ready_list) + 1;
+    }
+
+    else {
+      count = list_size(&ready_list);
+    }
+
+    load_avg = fix_add (fix_mul(val_59_60, load_avg), fix_frac(count, 60));
+}
 
   struct thread *t = thread_current ();
 
   /* Update statistics. */
-  if (t == idle_thread)
-    idle_ticks++;
-#ifdef USERPROG
-  else if (t->pagedir != NULL)
-    user_ticks++;
-#endif
-  else
-    kernel_ticks++;
+    if (t == idle_thread)
+      idle_ticks++;
+  #ifdef USERPROG
+    else if (t->pagedir != NULL)
+      user_ticks++;
+  #endif
+    else
+      kernel_ticks++;
 
   thread_foreach(wakeup, NULL);
 
@@ -265,6 +275,7 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
+  t->wakeup_time = -1;
 
   // Front item in the list
   if (list_size(&ready_list) > 0) {
@@ -297,6 +308,7 @@ thread_block (void)
 
   thread_current ()->status = THREAD_BLOCKED;
   schedule ();
+
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -319,6 +331,7 @@ thread_unblock (struct thread *t)
   list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
+
 }
 
 /* Returns the name of the running thread. */
@@ -454,7 +467,8 @@ thread_get_load_avg (void)
 {
   /* Not yet implemented. */
   // return 0;
-  return fix_round(load_avg)*100;
+  // return fix_round(load_avg)*100;
+  return fix_round(fix_scale(load_avg, 100));
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */

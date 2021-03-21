@@ -77,7 +77,6 @@ int main (void) NO_RETURN;
 int
 main (void)
 {
-  static fixed_point_t load_avg;
   char **argv;
   /* Clear BSS. */
   bss_init ();
