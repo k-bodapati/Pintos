@@ -18,7 +18,6 @@
 
 static fixed_point_t load_avg, val_59_60;
 
-list_less_func priority_compare;
 bool priority_compare (const struct list_elem *a,
                              const struct list_elem *b,
                              void *aux UNUSED)
@@ -256,7 +255,6 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
-  t->wakeup_time = -1; // default wakeup time is -1, to know this thread is never blocked
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -275,19 +273,24 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
-  t->wakeup_time = -1;
 
-  // Front item in the list
+
+  // /* Default Wake up time in -1*/
+  // t->wakeup_time = -1;
+  //
+  // /* Initializing Holding Locks list */
+  //
+  // val_59_60 = fix_frac(59,60);
+
+  /* Yeilding if higher priority thread is created */
   if (list_size(&ready_list) > 0) {
     struct list_elem *front_elem = list_front(&ready_list);
     struct thread *front_thread = list_entry (front_elem, struct thread, elem);
 
-    // Got for higher priority thread
     if (front_thread->priority > thread_get_priority()) {
       thread_yield();
     }
   }
-
 
   return tid;
 }
@@ -567,6 +570,13 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+
+  /* Default Wake up time in -1*/
+  t->wakeup_time = -1;
+  t->default_priority = priority;
+
+  /* Initializing Holding Locks list */
+  list_init(&t->holding_locks);
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);

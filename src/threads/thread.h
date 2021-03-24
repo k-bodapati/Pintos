@@ -80,6 +80,22 @@ typedef int tid_t;
    only because they are mutually exclusive: only a thread in the
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
+/*
+struct MyStruct_s
+{
+    int id;
+} MyStruct_default = {3};
+
+typedef struct MyStruct_s MyStruct
+https://stackoverflow.com/questions/13716913/default-value-for-struct-member-in-c
+*/
+// struct array
+// {
+//   int arr[8];
+// } array_defualt = {-1, -1, -1, -1, -1, -1, -1, -1};
+//
+// typedef struct array my_array;
+
 struct thread
   {
     /* Owned by thread.c. */
@@ -89,10 +105,12 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     int64_t wakeup_time;                /* Time when a thread should be woken, default = -1 */
-    // int64_t recent_cpu = 0;
-    // int nice;
-    struct list_elem allelem;           /* List element for all threads list. */
+    int default_priority;               /* Priority before any donation */
+    struct list holding_locks;         /* List of all locks held by this
+                                          thread, It is sorted in decreasing order
+                                          of priority */
 
+    struct list_elem allelem;          /* List element for all threads list. */
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -109,6 +127,8 @@ struct thread
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
+
+list_less_func priority_compare;
 
 void thread_init (void);
 void thread_start (void);

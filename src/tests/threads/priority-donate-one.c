@@ -19,15 +19,20 @@ static thread_func acquire1_thread_func;
 static thread_func acquire2_thread_func;
 
 void
-test_priority_donate_one (void) 
+test_priority_donate_one (void)
 {
   struct lock lock;
 
   /* This test does not work with the MLFQS. */
   ASSERT (!thread_mlfqs);
-
   /* Make sure our priority is the default. */
+
+  // for (int i=0; i<8; i++)
+  //   msg ("Record is %d", thread_current()->priority_arr[i]);
+
   ASSERT (thread_get_priority () == PRI_DEFAULT);
+
+
 
   lock_init (&lock);
   lock_acquire (&lock);
@@ -43,10 +48,10 @@ test_priority_donate_one (void)
 }
 
 static void
-acquire1_thread_func (void *lock_) 
+acquire1_thread_func (void *lock_)
 {
   struct lock *lock = lock_;
-
+  
   lock_acquire (lock);
   msg ("acquire1: got the lock");
   lock_release (lock);
@@ -54,7 +59,7 @@ acquire1_thread_func (void *lock_)
 }
 
 static void
-acquire2_thread_func (void *lock_) 
+acquire2_thread_func (void *lock_)
 {
   struct lock *lock = lock_;
 
