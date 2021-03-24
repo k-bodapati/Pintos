@@ -283,6 +283,7 @@ thread_create (const char *name, int priority,
   // val_59_60 = fix_frac(59,60);
 
   /* Yeilding if higher priority thread is created */
+  list_sort(&ready_list, priority_compare, NULL);
   if (list_size(&ready_list) > 0) {
     struct list_elem *front_elem = list_front(&ready_list);
     struct thread *front_thread = list_entry (front_elem, struct thread, elem);

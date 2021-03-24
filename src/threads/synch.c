@@ -284,15 +284,16 @@ lock_release (struct lock *lock)
       list_sort(&lock->holder->holding_locks, lock_priority_compare, NULL);
       new_priority = list_entry(list_front(&thread_current()->holding_locks), struct lock, elem)->max_priority;
     }
+    lock->holder = NULL;
+    sema_up (&lock->semaphore);
     thread_set_priority(new_priority);
+
   }
 
-
-
-
-
-  lock->holder = NULL;
-  sema_up (&lock->semaphore);
+  else {
+    lock->holder = NULL;
+    sema_up (&lock->semaphore);
+  }
 }
 
 /* Returns true if the current thread holds LOCK, false
