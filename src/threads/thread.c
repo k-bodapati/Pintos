@@ -280,12 +280,13 @@ thread_create (const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
 
-
+  if (thread_mlfqs) {
   t->recent_cpu = thread_current()->recent_cpu;
   t->nice = thread_current()->nice;
 
   t->priority =  PRI_MAX - fix_trunc(fix_unscale(t->recent_cpu, 4)) - (t->nice * 2);
   t->default_priority = t->priority;
+}
 
   /* Add to run queue. */
   thread_unblock (t);
@@ -447,7 +448,7 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority)
 {
-  if (new_priority < thread_current()->default_priority && thread_current()->priority != thread_current()->default_priority) {
+  if (new_priority < thread_current()->default_priority && thread_current()->priority != thread_current()->default_priority && !thread_mlfqs) {
     thread_current()->default_priority = new_priority;
   }
 
