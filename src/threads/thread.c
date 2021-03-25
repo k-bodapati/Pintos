@@ -17,6 +17,7 @@
 #endif
 
 static fixed_point_t load_avg, val_59_60;
+thread_action_func update_pri, update_recent_cpu;
 
 bool priority_compare (const struct list_elem *a,
                              const struct list_elem *b,
@@ -179,16 +180,27 @@ thread_start (void)
 void
 thread_tick (void)
 {
-  if (timer_ticks()%100 == 0) {
-    int count;
-
+  if (thread_mlfqs) {
     if (thread_current() != idle_thread)
-      count = list_size(&ready_list) + 1;
-    else
-      count = list_size(&ready_list);
+      thread_current()->recent_cpu = fix_add(thread_current()->recent_cpu, fix_int(1));
 
-    load_avg = fix_add (fix_mul(fix_frac(59,60), load_avg), fix_frac(count, 60));
-}
+    if (timer_ticks()%4 == 0) {
+      thread_foreach(update_pri, NULL);
+      // thread_yield();
+    }
+
+    if (timer_ticks()%100 == 0) {
+      int count;
+
+      if (thread_current() != idle_thread)
+        count = list_size(&ready_list) + 1;
+      else
+        count = list_size(&ready_list);
+
+      load_avg = fix_add (fix_mul(fix_frac(59,60), load_avg), fix_frac(count, 60));
+      thread_foreach(update_recent_cpu, NULL);
+    }
+  }
 
   struct thread *t = thread_current ();
 
@@ -267,6 +279,13 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
+
+
+  t->recent_cpu = thread_current()->recent_cpu;
+  t->nice = thread_current()->nice;
+
+  t->priority =  PRI_MAX - fix_trunc(fix_unscale(t->recent_cpu, 4)) - (t->nice * 2);
+  t->default_priority = t->priority;
 
   /* Add to run queue. */
   thread_unblock (t);
@@ -458,6 +477,10 @@ void
 thread_set_nice (int nice UNUSED)
 {
   /* Not yet implemented. */
+  struct thread *cur = thread_current();
+  cur->nice = nice;
+  int new_priority = PRI_MAX - fix_trunc(fix_unscale(cur->recent_cpu, 4)) - (cur->nice * 2);
+  thread_set_priority(new_priority);
 }
 
 /* Returns the current thread's nice value. */
@@ -465,7 +488,7 @@ int
 thread_get_nice (void)
 {
   /* Not yet implemented. */
-  return 0;
+  return thread_current()->nice;
 }
 
 /* Returns 100 times the system load average. */
@@ -483,6 +506,7 @@ int
 thread_get_recent_cpu (void)
 {
   /* Not yet implemented. */
+  return fix_round(fix_scale(thread_current()->recent_cpu, 100));
 
   return 0;
 }
@@ -578,6 +602,8 @@ init_thread (struct thread *t, const char *name, int priority)
   /* Default Wake up time in -1*/
   t->wakeup_time = -1;
   t->default_priority = priority;
+  t->nice = 0;
+  t->recent_cpu = fix_int(0);
 
   /* Initializing Holding Locks and Donation list */
   list_init(&t->holding_locks);
@@ -702,6 +728,19 @@ allocate_tid (void)
 
   return tid;
 }
+
+void update_pri (struct thread *t, void *aux UNUSED) {
+  int pri = PRI_MAX - fix_trunc(fix_unscale(t->recent_cpu, 4)) - (t->nice * 2);
+  t->priority = pri;
+}
+
+ thread_action_func update_recent_cpu;
+ void update_recent_cpu(struct thread *t, void *aux UNUSED) {
+   fixed_point_t a = fix_scale(load_avg, 2);
+   a = fix_div(a, fix_add(a, fix_int(1)));
+   t->recent_cpu = fix_add(fix_mul(a,t->recent_cpu), fix_int(t->nice));
+ }
+
 
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */

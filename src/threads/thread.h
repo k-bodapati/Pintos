@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include <fixedpoint.h>
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -106,7 +107,8 @@ struct thread
     int priority;                       /* Priority. */
     int64_t wakeup_time;                /* Time when a thread should be woken, default = -1 */
     int default_priority;               /* Priority before any donation */
-    fixed_point_t
+    fixed_point_t recent_cpu;
+    int nice;
     struct list holding_locks;          /* List of all locks held by this
                                           thread, It is sorted in decreasing order
                                           of priority */
