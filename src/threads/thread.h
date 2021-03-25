@@ -106,10 +106,11 @@ struct thread
     int priority;                       /* Priority. */
     int64_t wakeup_time;                /* Time when a thread should be woken, default = -1 */
     int default_priority;               /* Priority before any donation */
-    struct list holding_locks;         /* List of all locks held by this
+    fixed_point_t
+    struct list holding_locks;          /* List of all locks held by this
                                           thread, It is sorted in decreasing order
                                           of priority */
-
+    struct list donated_threads;        /* List of all priority donated threads*/
     struct list_elem allelem;          /* List element for all threads list. */
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */

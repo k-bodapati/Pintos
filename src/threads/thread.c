@@ -153,7 +153,8 @@ thread_init (void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 
-  val_59_60 = fix_frac(59,60);
+  // val_59_60 = fix_frac(59,60);
+  load_avg = fix_int(0);
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -181,16 +182,12 @@ thread_tick (void)
   if (timer_ticks()%100 == 0) {
     int count;
 
-
-    if (thread_current() != idle_thread) {
+    if (thread_current() != idle_thread)
       count = list_size(&ready_list) + 1;
-    }
-
-    else {
+    else
       count = list_size(&ready_list);
-    }
 
-    load_avg = fix_add (fix_mul(val_59_60, load_avg), fix_frac(count, 60));
+    load_avg = fix_add (fix_mul(fix_frac(59,60), load_avg), fix_frac(count, 60));
 }
 
   struct thread *t = thread_current ();
@@ -431,15 +428,21 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority)
 {
-  thread_current ()->priority = new_priority;
-  list_sort(&ready_list, priority_compare, NULL);
+  if (new_priority < thread_current()->default_priority && thread_current()->priority != thread_current()->default_priority) {
+    thread_current()->default_priority = new_priority;
+  }
 
-  if (list_size(&ready_list) > 0)
-  {
-    struct list_elem *front = list_front(&ready_list);
-    struct thread *front_t = list_entry(front, struct thread, elem);
-    if (front_t->priority > new_priority)
-      thread_yield();
+  else {
+    thread_current ()->priority = new_priority;
+    list_sort(&ready_list, priority_compare, NULL);
+
+    if (list_size(&ready_list) > 0)
+    {
+      struct list_elem *front = list_front(&ready_list);
+      struct thread *front_t = list_entry(front, struct thread, elem);
+      if (front_t->priority > new_priority)
+        thread_yield();
+    }
   }
 }
 
@@ -576,8 +579,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->wakeup_time = -1;
   t->default_priority = priority;
 
-  /* Initializing Holding Locks list */
+  /* Initializing Holding Locks and Donation list */
   list_init(&t->holding_locks);
+  list_init(&t->donated_threads);
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);

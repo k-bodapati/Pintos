@@ -52,6 +52,8 @@ list_less_func lock_priority_compare;
    return (lock1->max_priority > lock2->max_priority);
  }
 
+ // void tell_donated_threads(int old_priority, int new_priority);
+
 void
 sema_init (struct semaphore *sema, unsigned value)
 {
@@ -126,6 +128,7 @@ sema_up (struct semaphore *sema)
 
   old_level = intr_disable ();
   if (!list_empty (&sema->waiters)) {
+    list_sort(&sema->waiters, priority_compare, NULL);
     thread_unblock (list_entry (list_pop_front (&sema->waiters),
                                 struct thread, elem));
   }
@@ -217,13 +220,16 @@ lock_acquire (struct lock *lock)
 
   if (lock->holder != NULL && lock->holder->priority > -1 && lock->holder->priority < 64) {
     if (thread_get_priority() > lock->max_priority) {
-      lock->holder->priority = thread_get_priority(); /* Priority Donation */
-      lock->max_priority = thread_get_priority();
-      // Should Sort here
-      // list_sort()
-      // if (list_size(&lock->holder->holding_locks) > 100)
-      //   list_sort(&lock->holder->holding_locks, lock_priority_compare, NULL);
+      /* Telling all the donated threads to notice this donation */
+      // tell_donated_threads(lock->holder, lock->holder->priority, thread_get_priority)
 
+
+      lock->holder->priority = thread_get_priority(); /* Priority Donation */
+      /* Add this thread to donation list */
+      // list_push_back(&thread_current()->donated_threads, &lock->holder->elem);
+      // Should Tell all other donated threads
+
+      lock->max_priority = thread_get_priority();
     }
 
   }
@@ -287,6 +293,7 @@ lock_release (struct lock *lock)
     lock->holder = NULL;
     sema_up (&lock->semaphore);
     thread_set_priority(new_priority);
+    // Should Tell all other threads that I lost a donation
 
   }
 

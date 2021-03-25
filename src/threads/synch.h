@@ -9,6 +9,7 @@ struct semaphore
   {
     unsigned value;             /* Current value. */
     struct list waiters;        /* List of waiting threads. */
+    // int max_priority;           /* Max priority of the thread its waiting */
   };
 
 void sema_init (struct semaphore *, unsigned value);
