@@ -237,7 +237,7 @@ lock_acquire (struct lock *lock)
       /* Telling all the donated threads to notice this donation */
 
       tell_donated_threads(lock->holder, lock->holder->priority, thread_get_priority());
-      if (lock->holder->default_priority == NULL) {
+      if (lock->holder->default_priority == -1) {
         lock->holder->default_priority = lock->holder->priority;
       }
       lock->holder->priority = thread_get_priority(); /* Priority Donation */
@@ -316,7 +316,10 @@ lock_release (struct lock *lock)
     int new_priority;
     /* Setting max lock priority after lock is removed or default */
     if (list_empty(&thread_current()->holding_locks)) {
-      new_priority = thread_current()->default_priority;
+      if (thread_current()->default_priority == -1)
+        new_priority = thread_current()->priority;
+      else
+        new_priority = thread_current()->default_priority;
       lock->max_priority = -1;
     }
     else {

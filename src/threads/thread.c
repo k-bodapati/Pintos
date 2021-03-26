@@ -602,7 +602,7 @@ init_thread (struct thread *t, const char *name, int priority)
 
   /* Default Wake up time in -1*/
   t->wakeup_time = -1;
-  t->default_priority = NULL;
+  t->default_priority = -1;
   t->nice = 0;
   t->recent_cpu = fix_int(0);
 
