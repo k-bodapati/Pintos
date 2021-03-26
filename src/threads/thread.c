@@ -281,12 +281,12 @@ thread_create (const char *name, int priority,
   sf->ebp = 0;
 
   if (thread_mlfqs) {
-  t->recent_cpu = thread_current()->recent_cpu;
-  t->nice = thread_current()->nice;
+    t->recent_cpu = thread_current()->recent_cpu;
+    t->nice = thread_current()->nice;
 
-  t->priority =  PRI_MAX - fix_trunc(fix_unscale(t->recent_cpu, 4)) - (t->nice * 2);
-  t->default_priority = t->priority;
-}
+    t->priority =  PRI_MAX - fix_trunc(fix_unscale(t->recent_cpu, 4)) - (t->nice * 2);
+    t->default_priority = t->priority;
+  }
 
   /* Add to run queue. */
   thread_unblock (t);
@@ -602,7 +602,7 @@ init_thread (struct thread *t, const char *name, int priority)
 
   /* Default Wake up time in -1*/
   t->wakeup_time = -1;
-  t->default_priority = priority;
+  t->default_priority = NULL;
   t->nice = 0;
   t->recent_cpu = fix_int(0);
 
