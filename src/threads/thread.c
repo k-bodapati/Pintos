@@ -608,7 +608,9 @@ init_thread (struct thread *t, const char *name, int priority)
 
   /* Initializing Holding Locks and Donation list */
   list_init(&t->holding_locks);
-  list_init(&t->donated_threads);
+  for (int i=0; i<30; i++) {
+    t->donated_threads[i] = NULL;
+  }
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);

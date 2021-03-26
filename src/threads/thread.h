@@ -112,7 +112,7 @@ struct thread
     struct list holding_locks;          /* List of all locks held by this
                                           thread, It is sorted in decreasing order
                                           of priority */
-    struct list donated_threads;        /* List of all priority donated threads*/
+    struct thread *donated_threads[30]; /* Assuming I dont donate more than 30 threads */
     struct list_elem allelem;          /* List element for all threads list. */
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
