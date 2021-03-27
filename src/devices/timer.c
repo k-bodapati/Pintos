@@ -21,7 +21,6 @@
 static int64_t ticks;
 
 /* Load average since OS booted start value will be */
-// static fixed_point_t load_avg;
 
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
@@ -79,15 +78,6 @@ timer_ticks (void)
   return t;
 }
 
-// fixed_point_t
-// current_loadavg (void)
-// {
-//   enum intr_level old_level = intr_disable ();
-//   fixed_point_t l_a = load_avg;
-//   intr_set_level (old_level);
-//   return l_a;
-// }
-
 /* Returns the number of timer ticks elapsed since THEN, which
    should be a value once returned by timer_ticks(). */
 int64_t
@@ -104,6 +94,7 @@ timer_sleep (int64_t ticks)
   if (ticks>0) {
     int64_t start = timer_ticks ();
     ASSERT (intr_get_level () == INTR_ON);
+
     enum intr_level old_level= intr_disable();
     thread_current()->wakeup_time = start + ticks;
     thread_block();
@@ -181,16 +172,6 @@ timer_print_stats (void)
 {
   printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
-
-/* Thread for each function to wakeup thread */
-// thread_action_func wakeup;
-// void wakeup (struct thread *t, void *aux UNUSED) {
-//   // check for wakeup time, if it is current time, then wake up it
-//   int64_t current_time = timer_ticks();
-//   if (current_time >= t->wakeup_time) {
-//     thread_unblock(t);
-//   }
-// }
 
 /* Timer interrupt handler. */
 static void

@@ -8,12 +8,12 @@
 
 /* States in a thread's life cycle. */
 enum thread_status
-  {
-    THREAD_RUNNING,     /* Running thread. */
-    THREAD_READY,       /* Not running but ready to run. */
-    THREAD_BLOCKED,     /* Waiting for an event to trigger. */
-    THREAD_DYING        /* About to be destroyed. */
-  };
+{
+  THREAD_RUNNING,     /* Running thread. */
+  THREAD_READY,       /* Not running but ready to run. */
+  THREAD_BLOCKED,     /* Waiting for an event to trigger. */
+  THREAD_DYING        /* About to be destroyed. */
+};
 
 /* Thread identifier type.
    You can redefine this to whatever type you like. */
@@ -81,50 +81,42 @@ typedef int tid_t;
    only because they are mutually exclusive: only a thread in the
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
-/*
-struct MyStruct_s
-{
-    int id;
-} MyStruct_default = {3};
-
-typedef struct MyStruct_s MyStruct
-https://stackoverflow.com/questions/13716913/default-value-for-struct-member-in-c
-*/
-// struct array
-// {
-//   int arr[8];
-// } array_defualt = {-1, -1, -1, -1, -1, -1, -1, -1};
-//
-// typedef struct array my_array;
 
 struct thread
-  {
-    /* Owned by thread.c. */
-    tid_t tid;                          /* Thread identifier. */
-    enum thread_status status;          /* Thread state. */
-    char name[16];                      /* Name (for debugging purposes). */
-    uint8_t *stack;                     /* Saved stack pointer. */
-    int priority;                       /* Priority. */
-    int64_t wakeup_time;                /* Time when a thread should be woken, default = -1 */
-    int default_priority;               /* Priority before any donation */
-    fixed_point_t recent_cpu;
-    int nice;
-    struct list holding_locks;          /* List of all locks held by this
-                                          thread, It is sorted in decreasing order
-                                          of priority */
-    struct thread *donated_threads[30]; /* Assuming I dont donate more than 30 threads */
-    struct list_elem allelem;          /* List element for all threads list. */
-    /* Shared between thread.c and synch.c. */
-    struct list_elem elem;              /* List element. */
+{
+  /* Owned by thread.c. */
+  tid_t tid;                          /* Thread identifier. */
+  enum thread_status status;          /* Thread state. */
+  char name[16];                      /* Name (for debugging purposes). */
+  uint8_t *stack;                     /* Saved stack pointer. */
+  int priority;                       /* Priority. */
+
+  /* Time when a thread should be woken, default = -1 */
+  int64_t wakeup_time;
+  int default_priority;               /* Priority before any donation. */
+  fixed_point_t recent_cpu;
+  int nice;
+
+  /* List of all locks held by this thread, It is sorted in decreasing order
+  of priority. */
+  struct list holding_locks;
+
+  /* Array of all thread, this thread donated to,Assuming I dont donate
+  more than 30 threads. */
+  struct thread *donated_threads[30];
+  struct list_elem allelem;          /* List element for all threads list. */
+
+  /* Shared between thread.c and synch.c. */
+  struct list_elem elem;              /* List element. */
 
 #ifdef USERPROG
-    /* Owned by userprog/process.c. */
-    uint32_t *pagedir;                  /* Page directory. */
+  /* Owned by userprog/process.c. */
+  uint32_t *pagedir;                  /* Page directory. */
 #endif
 
-    /* Owned by thread.c. */
-    unsigned magic;                     /* Detects stack overflow. */
-  };
+  /* Owned by thread.c. */
+  unsigned magic;                     /* Detects stack overflow. */
+};
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.

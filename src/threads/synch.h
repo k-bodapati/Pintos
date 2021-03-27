@@ -6,11 +6,10 @@
 
 /* A counting semaphore. */
 struct semaphore
-  {
-    unsigned value;             /* Current value. */
-    struct list waiters;        /* List of waiting threads. */
-    // int max_priority;           /* Max priority of the thread its waiting */
-  };
+{
+  unsigned value;             /* Current value. */
+  struct list waiters;        /* List of waiting threads. */
+};
 
 void sema_init (struct semaphore *, unsigned value);
 void sema_down (struct semaphore *);
@@ -23,8 +22,10 @@ struct lock
   {
     struct thread *holder;      /* Thread holding lock (for debugging). */
     struct semaphore semaphore; /* Binary semaphore controlling access. */
+
     /* Max Priority thread's priortity for this lock */
     int max_priority;
+
     /* Adding List_elem here to keep a record of all locks held by a thread */
     struct list_elem elem;
   };
@@ -34,6 +35,10 @@ void lock_acquire (struct lock *);
 bool lock_try_acquire (struct lock *);
 void lock_release (struct lock *);
 bool lock_held_by_current_thread (const struct lock *);
+
+/* Comparision Functions for sorting*/
+list_less_func lock_priority_compare, waiter_compare;
+void tell_donated_threads(struct thread *t, int old_priority, int new_priority);
 
 /* Condition variable. */
 struct condition
